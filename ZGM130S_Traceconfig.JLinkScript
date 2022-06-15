@@ -1,13 +1,13 @@
 /*********************************************************************
-*            (c) 1995 - 2018 SEGGER Microcontroller GmbH             *
-*                        The Embedded Experts                        *
-*                           www.segger.com                           *
+* Z-Wave ZGM130S Embedded Trace Module script                        *
+* Initializes and enables the ETM module and drives out the default  *
+* pins. See the code for more details.                               *
 **********************************************************************
 
 -------------------------- END-OF-HEADER -----------------------------
 
-File    : ST_STM32F769_Modified_Traceconfig.JLinkScript
-Purpose : Examplescript to modify TracePortWidth and Pin init
+File    : ZGM130S_TraceConfig.JLinkScript
+Purpose : Example script for the Z-Wave ZGM130
 Literature:
   [1]  J-Link User Guide
 

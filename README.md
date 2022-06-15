@@ -17,48 +17,48 @@ The example code here is provided AS-IS and without warrantee.
     - Cables and power source
 - J-Trace 20 pin connector pinout: ![J-Trace Pinout](./pics/jtrace-pinout.png)
     - 0.05" (1.27mm) spacing
+- Connect the DUT to the J-Trace and ensure the Target Power is green
 
 ## Software
 
 - Simplicity Studio (for building the code)
 - Segger [Ozone](https://www.segger.com/products/development-tools/ozone-j-link-debugger/]Debugger) (supports ETM trace)
     - SVD files for the respective EFR32 - see the SVD folder
+- This repo contains JLink scripts and other files needed for tracing
 
 # Step by Step Instructions
 
 1. Clone this repo into your Z-Wave project
-    1. SSv5 should automatically add the .c and .h files to the project
-2. In SSv5 - right click on the project-\>properties-\>C/C++ Build-\>Settings-\>Tool Settings tab-\>GNU ARM C Compiler-\>Includes
-   1. add: "${workspace\_loc:/${ProjName}/etm\_zwave}"
-   2. click on Apply and Close
-3. Add a call to InitTraceETM() in your code
-    1. Need to figure out the best place to do this but for now put it in Main\(\)
-        1. Needs to be early in the bootup so the tracing starts before you get to Main otherwise Ozone is confused
-        2. Can the GPIOs and routing be setup to be stored even thru SW reset?
-        3. In the short term the solution is to press reset on the WSTK board to start the code, then do a Attach and Halt in Ozone then a SW reset.
-    2. Also add the following to the top of that file:
-    3. #include "initETM.h"
-4. Build the project in SSv5
-5. Open Ozone
-6. Click on the New Project wizard and select the .AXF file for the project. Ozone will find the source code files via the .axf file.
-7. Click on File-\>Edit Project file (opens the .jdebug file)
-8. Add the following lines in the OnProjectLoad section
+2. Build the project in SSv5
+3. Open Ozone
+4. Click on the New Project wizard and select the .AXF file for the project. Ozone will find the source code files via the .axf file.
+5. Click on File-\>Edit Project file (opens the .jdebug file)
+6. Add the following lines to the end of the OnProjectLoad section
     1. Project.AddSvdFile ("$(ProjectDir)/etm\_zwave/svd/EFR32XG13XFULL.svd"); 
         1. Use the .svd file that matches your DUT
         2. For the modules, just use the base-SoC part which has the same internal registers which is what the .SVD defines
     2. Project.SetOSPlugin("FreeRTOSPlugin"); 
-9. Enable Tracing
+7. Scroll down to the BeforeTargetConnect section
+    1. uncomment the call and the }
+    2. Add the following line with the proper chip for your DUT
+        1. Project.SetJLinkScript("$(ProjectDir)/etm_zwave/ZGM130S_Traceconfig.JLinkScript"); 
+8. Enable Tracing
     1. Tools-\>Trace Settings ![Trace Settings](./pics/TraceSettings.png)
-10. 
-
-# Scripts
-
-A potentially much better solution is to use a jlinkscript instead of compiling the setup code into your project.
-This is just getting underway but will be tested shortly.
+9. Click on View -\> Instruction Trace, Code Profile, Timeline and any other windows desired
+10. Click on Download and Reset Program  
+11. Review the console window and look for any errors
+12. The DUT should stop at the beginning of Main() and there is data in the Timeline
 
 # Reference Documents
 
 - [Segger Wiki on xG21](https://wiki.segger.com/Silicon_Labs_EFR32xG21)
+
+# ToDo
+
+- How to route other pins used for tracing
+- Can 2 or even 1 trace pin produce decent results?
+- Explore using faster clocks that may be needed to use fewer pins
+    - currently the AUXHFCLK is used on the ZGM130 which is ~19Mhz and async to the HFXO.
 
 # Contacts
 - Eric Ryherd - drzwave@silabs.com - Author
