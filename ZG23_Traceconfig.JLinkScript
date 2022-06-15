@@ -9,10 +9,9 @@
 File    : ZG23_TraceConfig.JLinkScript
 Purpose : Example script for the Z-Wave ZG23 (and ZGM230?)
 Literature:
-  [1]  J-Link User Guide
+  [1] J-Link User Guide  - https://www.segger.com/downloads/jlink/UM08001
+  [2] JLinkScript syntax - https://wiki.segger.com/J-Link_script_files#Using_J-Link_script_files
 
-Additional information:
-  For more information about public functions that can be implemented in order to customize J-Link actions, please refer to [1]
 */
 
 /*********************************************************************
@@ -32,7 +31,7 @@ Additional information:
 *    (2) Should not call JLINK_TARGET_Halt(). Can rely on target being halted when entering this function
 */
 int OnTraceStart(void) {
-  U32 CMU_HFBUSCLKEN0;
+  U32 CMU_HFBUSCLKEN0;      // These variables are left over from the ZGM130 - most of these are not needed with Series2
   U32 CMU_OSCENCMD;
   U32 GPIO_BASE_Addr;
   U32 GPIO_PC_Addr;
@@ -57,36 +56,30 @@ int OnTraceStart(void) {
   U32 v;
   U32 PortWidth;
   //
-  // Adjust sampling point of trace pin (Optional: not needed for this cpu)
+  // Adjust sampling point of trace pin (Optional: not needed for this cpu) - ToDo - capture timing and push speed to the max - maybe turn off GPIO Slew rate?
   //
   //JLINK_ExecCommand("TraceSampleAdjust TD=2000"); 
   //
-  // Set Trace Portwidth(Optional): Default 4 Pin Trace, other possibilities: 1, 2, 4
+  // Set Trace Portwidth(Optional): Default 4 Pin Trace, other possibilities: 1, 2, 4 - ToDo - add this feature to automatically adjust to other numbers of data pins
   //
   // JLINK_TRACE_PortWidth = 4;
   //
-  // RCC_AHB1ENR:    0x40023830          Periphal clock register
-  // GPIOE_MODER:    0x40021000          GPIO Port mode register
-  // GPIOE_PUPDR:    0x4002100C          GPIO Pullup/Puldown register
-  // GPIOE_OSPEEDR:  0x40021008          GPIO output speed register
-  // GPIOE_AFRL:     0x40021020          GPIO Alternate function low register
-  // DBGMCU_CR:      0xE0042004          Debug MCU register
-  //
-  // Using location #3:
-  //   PC6 => TCLK
-  //   PC7 => TD0
-  //   PC8 => TD1
-  //   PC9 => TD2
-  //   PC10 => TD3
-  //
-  //
-  // Init register addresses
-  //
+
+  // enable clocks
+    // In the short term I have determined these registers using Ozone to change the register values needed - I'll make these a little cleaner later...
+    JLINK_MEM_WriteU32 (0x50008064, 0x4000000); // enable CMU_NS.CLKEN0.GPIO
 
   //
   // GPIO CONFIG
   // xG23 uses PA04=TRACECLK, PA03=TD0, PA05=TD1, PA06=TD2, PA07=TD3
+   JLINK_MEM_WriteU32 (0x5003C444, 0x3E); // GPIO_NS.TRACEROUTEPEN enable TRACE CLK and the 4 data pins
+   JLINK_MEM_WriteU32 (0x5003C034, 0x55555000); // GPIO_NS.PORTA_MODEL enable PUSHPULLALT for GPIOS PA3-7
 
+  // This much doesn't get the ETM to work yet - CLOCK does not come out.
+
+  JLINK_SYS_Report("Start: Initializing trace pins");
+
+  /*               *****************Below is all old stuff from ZGM130 which is likely not needed ******************************************
   // Pin numbers (port C is assume - also change GPIOH/GPIOL usage below if changed)
   iTCLK = 6;
   iTD0  = 7;
@@ -182,6 +175,9 @@ int OnTraceStart(void) {
   v  &= ~(0x1F << 16);                // Mask ROUTEPEN register
   v  |= (routepen << 16);                     // Set ROUTEPEN
   JLINK_MEM_WriteU32(GPIO_ROUTEPEN, v);
+  *********************************************************************************/
+
   JLINK_SYS_Report("End: Initializing trace pins");
+
   return 0;
 }
