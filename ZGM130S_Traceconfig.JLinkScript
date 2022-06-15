@@ -1,0 +1,186 @@
+/*********************************************************************
+*            (c) 1995 - 2018 SEGGER Microcontroller GmbH             *
+*                        The Embedded Experts                        *
+*                           www.segger.com                           *
+**********************************************************************
+
+-------------------------- END-OF-HEADER -----------------------------
+
+File    : ST_STM32F769_Modified_Traceconfig.JLinkScript
+Purpose : Examplescript to modify TracePortWidth and Pin init
+Literature:
+  [1]  J-Link User Guide
+
+Additional information:
+  For more information about public functions that can be implemented in order to customize J-Link actions, please refer to [1]
+*/
+
+/*********************************************************************
+*
+*       OnTraceStart()
+*
+*  Function description
+*    If present, called right before trace is started.
+*    Used to initialize MCU specific trace related things like configuring the trace pins for alternate function.
+*
+*  Return value
+*    >= 0:  O.K.
+*     < 0:  Error
+*
+*  Notes
+*    (1) May use high-level API functions like JLINK_MEM_ etc.
+*    (2) Should not call JLINK_TARGET_Halt(). Can rely on target being halted when entering this function
+*/
+int OnTraceStart(void) {
+  U32 CMU_HFBUSCLKEN0;
+  U32 CMU_OSCENCMD;
+  U32 GPIO_BASE_Addr;
+  U32 GPIO_PC_Addr;
+  U32 GPIO_PC_MODEL;
+  U32 GPIO_PC_MODEH;
+  U32 GPIO_ROUTEPEN;
+  U32 GPIO_ROUTELOC1;
+  U32 DBGMCU_CR_Addr;
+  U32 iTCLK;
+  U32 iTD0;
+  U32 iTD1;
+  U32 iTD2;
+  U32 iTD3;
+  U32 TCLKloc;
+  U32 TD0loc;
+  U32 TD1loc;
+  U32 TD2loc;
+  U32 TD3loc;
+  U32 routepen;
+  U32 EdgeTCLK;
+  U32 EdgeTD;
+  U32 v;
+  U32 PortWidth;
+  //
+  // Adjust sampling point of trace pin (Optional: not needed for this cpu)
+  //
+  //JLINK_ExecCommand("TraceSampleAdjust TD=2000"); 
+  //
+  // Set Trace Portwidth(Optional): Default 4 Pin Trace, other possibilities: 1, 2, 4
+  //
+  // JLINK_TRACE_PortWidth = 4;
+  //
+  // RCC_AHB1ENR:    0x40023830          Periphal clock register
+  // GPIOE_MODER:    0x40021000          GPIO Port mode register
+  // GPIOE_PUPDR:    0x4002100C          GPIO Pullup/Puldown register
+  // GPIOE_OSPEEDR:  0x40021008          GPIO output speed register
+  // GPIOE_AFRL:     0x40021020          GPIO Alternate function low register
+  // DBGMCU_CR:      0xE0042004          Debug MCU register
+  //
+  // Using location #3:
+  //   PC6 => TCLK
+  //   PC7 => TD0
+  //   PC8 => TD1
+  //   PC9 => TD2
+  //   PC10 => TD3
+  //
+  //
+  // Init register addresses
+  //
+
+  //
+  // GPIO CONFIG
+  //
+  // Pin numbers (port C is assume - also change GPIOH/GPIOL usage below if changed)
+  iTCLK = 6;
+  iTD0  = 7;
+  iTD1  = 8;
+  iTD2  = 9;
+  iTD3  = 10;
+
+  // Location 3 (PC6-10)
+  TCLKloc = 3;
+  TD0loc  = 3;
+  TD1loc  = 3;
+  TD2loc  = 3;
+  TD3loc  = 3;
+  routepen = 0x3; // Always enable at least TCLK and TD0
+
+  JLINK_SYS_Report("Start: Initializing trace pins");
+  
+  CMU_HFBUSCLKEN0 = 0x400E40B0;
+  CMU_OSCENCMD = 0x400E4060;
+  GPIO_BASE_Addr = 0x4000A000;
+  GPIO_PC_Addr = GPIO_BASE_Addr + 2 * 0x30;
+  GPIO_PC_MODEL = GPIO_PC_Addr + 0x4;
+  GPIO_PC_MODEH = GPIO_PC_Addr + 0x8;
+  GPIO_ROUTEPEN = GPIO_BASE_Addr + 0x440;
+  GPIO_ROUTELOC1 = GPIO_BASE_Addr + 0x448;
+  DBGMCU_CR_Addr     = 0xE0042004;
+  PortWidth = JLINK_TRACE_PortWidth;
+  JLINK_SYS_Report1("PortWidth: ", PortWidth);
+  
+  //
+  // Init clocks
+  //
+  JLINK_SYS_Report1("CMU_HFBUSCLKEN0: ", JLINK_MEM_ReadU32(CMU_HFBUSCLKEN0));
+  JLINK_MEM_WriteU32(CMU_HFBUSCLKEN0, 1 << 3); // Enable clock for GPIO
+  JLINK_SYS_Report1("CMU_HFBUSCLKEN0: ", JLINK_MEM_ReadU32(CMU_HFBUSCLKEN0));
+  JLINK_MEM_WriteU32(CMU_OSCENCMD, 1 << 4); // Enable AUXHFRCO
+
+  //
+  // Set GPIO ROUTE
+  //
+  JLINK_MEM_WriteU32(GPIO_ROUTELOC1, (TCLKloc << 0) | (TD0loc << 8) | (TD1loc << 14) | (TD2loc << 20) | (TD3loc << 26));
+
+  //
+  // TCLK init
+  //
+  v  =  JLINK_MEM_ReadU32(GPIO_PC_MODEL);
+  JLINK_SYS_Report1("R_GPIO_PC_MODEL: ", v);
+  v  &= ~(0xF << (4 * iTCLK));               // Mask Mode register
+  v  |= (4 << (4 * iTCLK));                  // Set push pull function mode
+  JLINK_SYS_Report1("W_GPIO_PC_MODEL: ", v);
+  JLINK_MEM_WriteU32(GPIO_PC_MODEL, v);
+  JLINK_SYS_Report1("GPIO_PC_MODEL: ", JLINK_MEM_ReadU32(GPIO_PC_MODEL));
+  
+  //
+  // TD0 init
+  //
+  v  =  JLINK_MEM_ReadU32(GPIO_PC_MODEL);
+  v  &= ~(0xF << (4 * iTD0));               // Mask Mode register
+  v  |= (4 << (4 * iTD0));                  // Set push pull function mode
+  JLINK_MEM_WriteU32(GPIO_PC_MODEL, v);
+  //
+  // TD1 init
+  //
+  if (PortWidth > 1) {
+    v  =  JLINK_MEM_ReadU32(GPIO_PC_MODEH);
+    v  &= ~(0xF << (4 * (iTD1 - 8)));               // Mask Mode register
+    v  |= (4 << (4 * (iTD1 - 8)));                  // Set push pull function mode
+    JLINK_MEM_WriteU32(GPIO_PC_MODEH, v);
+    routepen |= (0x1 << 2);
+  }
+  //
+  // TD2 & TD3 init
+  //
+  if (PortWidth > 2) {
+      //
+      // TD2 init
+      //
+      v  =  JLINK_MEM_ReadU32(GPIO_PC_MODEH);
+      v  &= ~(0xF << (4 * (iTD2 - 8)));               // Mask Mode register
+      v  |= (4 << (4 * (iTD2 - 8)));                  // Set push pull function mode
+      JLINK_MEM_WriteU32(GPIO_PC_MODEH, v);
+      //
+      // TD3 init
+      //
+      v  =  JLINK_MEM_ReadU32(GPIO_PC_MODEH);
+      v  &= ~(0xF << (4 * (iTD3 - 8)));               // Mask Mode register
+      v  |= (4 << (4 * (iTD3 - 8)));                  // Set push pull function mode
+      JLINK_MEM_WriteU32(GPIO_PC_MODEH, v);
+      routepen |= (0x3 << 3);
+  }
+
+  v  =  JLINK_MEM_ReadU32(GPIO_ROUTEPEN);
+  v  &= ~(0x1F << 16);                // Mask ROUTEPEN register
+  v  |= (routepen << 16);                     // Set ROUTEPEN
+  JLINK_MEM_WriteU32(GPIO_ROUTEPEN, v);
+  JLINK_SYS_Report("End: Initializing trace pins");
+  return 0;
+}
