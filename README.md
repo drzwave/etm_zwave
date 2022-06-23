@@ -18,6 +18,9 @@ The example code here is provided AS-IS and without warrantee.
 - J-Trace 20 pin connector pinout: ![J-Trace Pinout](./pics/jtrace-pinout.png)
     - 0.05" (1.27mm) spacing
 - Connect the DUT to the J-Trace and ensure the Target Power is green
+    - Note that the 20 pin debug cable should be as short as possible - ideally just 2-3"
+    - If you get LTRACE invalid frame errors on the trace, the signal quality across the ribbon cable is probably not good.
+    - Try lowering the clock speed, adjusting the timing in JTrace and that all ground pins are connected.
 
 ## Software
 
@@ -34,14 +37,20 @@ The example code here is provided AS-IS and without warrantee.
 4. Click on the New Project wizard and select the .AXF file for the project. Ozone will find the source code files via the .axf file.
 5. Click on File-\>Edit Project file (opens the .jdebug file)
 6. Add the following lines to the end of the OnProjectLoad section
-    1. Project.AddSvdFile ("$(ProjectDir)/etm\_zwave/svd/EFR32XG13XFULL.svd"); 
-        1. Use the .svd file that matches your DUT
-        2. For the modules, just use the base-SoC part which has the same internal registers which is what the .SVD defines
-    2. Project.SetOSPlugin("FreeRTOSPlugin"); 
+    1. Project.SetOSPlugin("FreeRTOSPlugin"); 
+    1. For xG13 projects:
+        1. Project.AddSvdFile ("$(ProjectDir)/etm\_zwave/svd/EFR32XG13XFULL.svd"); 
+    1. For xG14 projects:
+        1. Project.AddSvdFile ("$(ProjectDir)/etm\_zwave/svd/EFR32XG14XFULL.svd"); 
+    1. For xG23 projects:
+        1. Project.AddSvdFile ("$(ProjectDir)/etm\_zwave/svd/EFR32XG23A000F512GM40\_SEQ\_M33.svd"); 
+    2. For modules (ZGM130,ZGM230), just use the base-SoC part which has the same internal registers which is what the .SVD defines
 7. Scroll down to the BeforeTargetConnect section
     1. uncomment the call and the }
-    2. Add the following line with the proper chip for your DUT
+    2. Add ONE of the following lines that matches your Z-Wave chip :
         1. Project.SetJLinkScript("$(ProjectDir)/etm_zwave/ZGM130S_Traceconfig.JLinkScript"); 
+        1. TODO - create one for the ZG14
+        1. Project.SetJLinkScript("$(ProjectDir)/etm_zwave/ZG23_Traceconfig.JLinkScript"); 
 8. Enable Tracing
     1. Tools-\>Trace Settings ![Trace Settings](./pics/TraceSettings.png)
 9. Click on View -\> Instruction Trace, Code Profile, Timeline and any other windows desired
@@ -52,11 +61,13 @@ The example code here is provided AS-IS and without warrantee.
 # Reference Documents
 
 - [Segger Wiki on xG21](https://wiki.segger.com/Silicon_Labs_EFR32xG21)
+- [Segger Wiki on xG23](https://wiki.segger.com/Silicon_Labs_EFR32xG23)
 
 # ToDo
 
-- How to route other pins used for tracing
 - Can 2 or even 1 trace pin produce decent results?
+- Explore using both edges of the clock
+- Explore timing and make recommendations on cable length
 - Explore using faster clocks that may be needed to use fewer pins
     - currently the AUXHFCLK is used on the ZGM130 which is ~19Mhz and async to the HFXO.
 
