@@ -54,6 +54,7 @@ int OnTraceStart(void) {
   U32 GPIO_MODE_PUSH_PULL;
   
   U32 GPIO_Px_BASE;
+  U32 GPIO_Px_CTRL;
   U32 GPIO_Px_MODEL;
   U32 GPIO_Px_MODEH;
   U32 GPIO_Px_DOUT;
@@ -105,17 +106,18 @@ int OnTraceStart(void) {
   //
   // Init clocks
   //
-  JLINK_SYS_Report1("CMU_CLKEN0: ", JLINK_MEM_ReadU32(CMU_CLKEN0));
+  //JLINK_SYS_Report1("CMU_CLKEN0: ", JLINK_MEM_ReadU32(CMU_CLKEN0));
   JLINK_MEM_WriteU32(CMU_CLKEN0, 1 << CMU_CLKEN0GPIO_SHIFT); // Enable clock for GPIO
   JLINK_SYS_Report1("CMU_CLKEN0: ", JLINK_MEM_ReadU32(CMU_CLKEN0));
 
-  _TRACE_presc = 1;  /* 0: DIV1, 1: DIV2, 3: DIV4 */
+  // Z-Wave operates the ZG23 at 39MHz so the ETM can be clocked at DIV1 (ETM max is 40)
+  _TRACE_presc = 0;  /* 0: DIV1, 1: DIV2, 3: DIV4 */
   
-  JLINK_SYS_Report1("CMU_TRACECLKCTRL: ", JLINK_MEM_ReadU32(CMU_TRACECLKCTRL));
+  //JLINK_SYS_Report1("CMU_TRACECLKCTRL: ", JLINK_MEM_ReadU32(CMU_TRACECLKCTRL));
   JLINK_MEM_WriteU32(CMU_TRACECLKCTRL, _TRACE_presc << CMU_TRACEPRESC_SHIFT);
   JLINK_SYS_Report1("CMU_TRACECLKCTRL: ", JLINK_MEM_ReadU32(CMU_TRACECLKCTRL)); 
 
-  JLINK_MEM_WriteU32(GPIO_DBGROUTEPEN, 0x3);
+  JLINK_MEM_WriteU32(GPIO_DBGROUTEPEN, 0x3);    // enable the 2 SWD pins
   
   //
   // Set GPIO ROUTE
@@ -140,10 +142,14 @@ int OnTraceStart(void) {
   
   // Calculating position of port registers
   GPIO_Px_BASE  = GPIO_BASE + ( etmPort * 48 );
+  GPIO_Px_CTRL  = GPIO_Px_BASE + 0x00;
   GPIO_Px_MODEL = GPIO_Px_BASE + 0x04;
   GPIO_Px_MODEH = GPIO_Px_BASE + 0x0C;
   GPIO_Px_DOUT  = GPIO_Px_BASE + 0x10;
   
+  JLINK_MEM_WriteU32(GPIO_Px_CTRL, JLINK_MEM_ReadU32(GPIO_Px_CTRL) | 0x70); // set SLEW rate for the port to be fast
+  JLINK_SYS_Report1("GPIO_Px_CTRL: ", JLINK_MEM_ReadU32(GPIO_Px_CTRL)); 
+
   //
   // TCLK init
   //
@@ -218,5 +224,6 @@ int OnTraceStart(void) {
 */
 int ConfigTargetSettings(void) {
   JLINK_ExecCommand("CORESIGHT_SetTPIUBaseAddr = 0xE0040000 ForceUnlock = 1"); // TPIU address is missing in ROM table
+  JLINK_SYS_Report("Set TPIU Base Address");
   return 0;
 }
