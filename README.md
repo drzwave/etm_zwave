@@ -66,10 +66,6 @@ The example code here is provided AS-IS and without warrantee.
 # ToDo
 
 - Can 2 or even 1 trace pin produce decent results?
-- Explore using both edges of the clock
-- Explore timing and make recommendations on cable length
-- Explore using faster clocks that may be needed to use fewer pins
-    - currently the AUXHFCLK is used on the ZGM130 which is ~19Mhz and async to the HFXO.
 
 # Contacts
 - Eric Ryherd - drzwave@silabs.com - Author
