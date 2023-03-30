@@ -31,7 +31,7 @@ Literature:
 */
 int OnTraceStart(void) {
   U32 v;
-  U32 PortWidth;
+  U32 PortWidth;        // this is passed in from Ozone based on the setup chosen
   
   U32 CMU_BASE;
   U32 CMU_TRACECLKCTRL;
@@ -73,7 +73,7 @@ int OnTraceStart(void) {
   
   JLINK_SYS_Report("Start: Initializing trace pins");
   
-  PortWidth = JLINK_TRACE_PortWidth;
+  PortWidth = JLINK_TRACE_PortWidth;                // Ozone Tools->Trace Settings to choose the number of data pins - 4 pins rarely stalls the CPU
   JLINK_SYS_Report1("PortWidth: ", PortWidth);
   
   /* CMU */
@@ -169,6 +169,7 @@ int OnTraceStart(void) {
   v  |= (GPIO_MODE_PUSH_PULL << (4 * etmTD0Pin));                  // Set push pull function mode
   JLINK_MEM_WriteU32(GPIO_Px_MODEL, v);
   
+ if (PortWidth > 1) {
   //
   // TD1 init
   //
@@ -176,7 +177,8 @@ int OnTraceStart(void) {
   v  &= ~(0xF << (4 * etmTD1Pin));               // Mask Mode register
   v  |= (GPIO_MODE_PUSH_PULL << (4 * etmTD1Pin));                  // Set push pull function mode
   JLINK_MEM_WriteU32(GPIO_Px_MODEL, v);
-
+ }
+ if (PortWidth > 2) {
   //
   // TD2 init
   //
@@ -192,6 +194,7 @@ int OnTraceStart(void) {
   v  &= ~(0xF << (4 * etmTD3Pin));               // Mask Mode register
   v  |= (GPIO_MODE_PUSH_PULL << (4 * etmTD3Pin));                  // Set push pull function mode
   JLINK_MEM_WriteU32(GPIO_Px_MODEL, v);
+ }
 
   //
   // TRACEROUTE pin enable
