@@ -22,6 +22,10 @@ The example code here is provided AS-IS and without warrantee.
     - If you get LTRACE invalid frame errors on the trace, the signal quality across the ribbon cable is probably not good.
     - Try lowering the clock speed, adjusting the timing in JTrace and that all ground pins are connected.
 
+## Adapter
+
+- See the Adapter folder for a J-Trace to Minisimplicity adapter.
+
 ## Software
 
 - Simplicity Studio (for building the code)
