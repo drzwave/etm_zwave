@@ -23,11 +23,12 @@ The PCB is easily hand-soldered as there are no active components. The connector
 
 # ZGx23 to MiniSimplicity Connections
 
-Trace requires the TRACECLK and at least 1 TRACEDATA pin. The JT2Mini adapter typically provides 2 data pins which works with minimal stalling of the CPU.
+Trace requires the TRACECLK and at least 1 TRACEDATA pin. Fortunately TRACEDATA0 is the SWO pin so it is already wired to the MiniSimplicity header. The JT2Mini adapter typically provides 2 data pins which works with minimal stalling of the CPU.
 The typical connections to the MiniSimplicity header for use with this adapter are as follows:
 
+
 | Name | Port Pin | ZG23 pin # | ZGM230 Pin # | MiniSimplicity Header | Comments |
-| --- | --- | --- | --- |
+| ---     | ---  | --- | --- | --- | --- |
 | TRACECLK | PA04 | 29 | 16 | 9  | Trace Clock instead of PTISYNC |
 | TRACED0  | PA03 | 28 | 15 | 6  | TRACEDATA0 also SWO |
 | TRACED1  | PA05 | 30 | 17 | 10 | TRACEDATA1 instead of PTIDATA  |
