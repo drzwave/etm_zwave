@@ -22,9 +22,9 @@ The example code here is provided AS-IS and without warrantee.
     - If you get LTRACE invalid frame errors on the trace, the signal quality across the ribbon cable is probably not good.
     - Try lowering the clock speed, adjusting the timing in JTrace and that all ground pins are connected.
 
-## Adapter
+## JT2Mini Adapter
 
-- See the Adapter folder for a J-Trace to Minisimplicity adapter.
+- See the [Adapter](./adapter/ReadMe.md) folder for the J-Trace to MiniSimplicity adapter.
 
 ## Software
 
@@ -66,11 +66,32 @@ The example code here is provided AS-IS and without warrantee.
 11. Review the console window and look for any errors
 12. The DUT should stop at the beginning of Main() and there is data in the Timeline
 
+# Software Project Recommendations
+
+- Do not use -flto optimization when debugging. Link Time Optimization (LTO) mashes the code making Ozone unable to match the PC with the C source code.
+- Recommend installing Z-Wave DEBUG in the SLC - This will set the -Og optimzation option which will make the code much easier to trace and debug but requires more FLASH.
+    - In Simplicity Studio, click on the .slcp file for your project, then Software Components, then scroll down (or search) for Z-Wave Debug and click on it, then install it. Do NOT ship production code with Z-Wave Debug installed! Uninstall it for the final production release.
+    - May also want to install Z-Wave Debug Print and uncomment the #define DEBUGPRINT in app.c. This also requires IO Stream and a UART. This enables print statements to help with debugging. The print statements are sent out the uart and are visible on the SSv5 console window.
+
+# TroubleShooting
+
+- Ozone will give all sorts of different errors that most often are caused by Signal Integrity issues
+    - LTRACE (Time since start: 0.139 656, Thread=ETM1): Unknown trace data packet detected
+    - No trace clock present, trace may not work correctly.
+    - LTRACE (Time since start: 0.074 546, Thread=ETM1): Trace overflow detected. Trace packets may have been lost.
+    - General flakeyness where restarting Ozone yields different errors or works sometimes but not all the time
+- Signal Integrity of TRACECLK and TRACEDATA
+    - Use short cables (less than 6")
+    - Connect EVERY ground pin on the 20-pin header to the DUT if possible or add additional GND wires
+    - View the TRACECLK and TRACEDATA pins on a good scope with good grounds
+        - Adjust the slew rate of the EFR GPIO port to try to make the signals cleaner or sharper (See the .JLinkScript file for an example)
+    - Adjust the timing in the J-Trace - Ozone - Trace Settings - Trace Timing
+        - If the cable is short, the trace timing timing should not need to be adjusted as the EFR provides good setup/hold
+
 # Reference Documents
 
 - [Segger Wiki on xG21](https://wiki.segger.com/Silicon_Labs_EFR32xG21)
 - [Segger Wiki on xG23](https://wiki.segger.com/Silicon_Labs_EFR32xG23)
 
-# Contacts
-- Eric Ryherd - drzwave@silabs.com - Author
+# Contacts - Eric Ryherd - drzwave@silabs.com - Author
 

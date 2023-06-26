@@ -147,7 +147,10 @@ int OnTraceStart(void) {
   GPIO_Px_MODEH = GPIO_Px_BASE + 0x0C;
   GPIO_Px_DOUT  = GPIO_Px_BASE + 0x10;
   
-  JLINK_MEM_WriteU32(GPIO_Px_CTRL, JLINK_MEM_ReadU32(GPIO_Px_CTRL) | 0x70); // set SLEW rate for the port to be fast
+  v = JLINK_MEM_ReadU32(GPIO_Px_CTRL);
+  v &= ~(0x70);                         // AND off the slew rate bits
+  v |= 0x40;                            // bits 6:4 are the slew rate
+  JLINK_MEM_WriteU32(GPIO_Px_CTRL, v); // set SLEW rate for the port - default is 0x40 - higher number is faster slew rate - 0x70 is fastest but may need several GNDs
   JLINK_SYS_Report1("GPIO_Px_CTRL: ", JLINK_MEM_ReadU32(GPIO_Px_CTRL)); 
 
   //
