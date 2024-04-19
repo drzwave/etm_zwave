@@ -93,5 +93,7 @@ The example code here is provided AS-IS and without warrantee.
 - [Segger Wiki on xG21](https://wiki.segger.com/Silicon_Labs_EFR32xG21)
 - [Segger Wiki on xG23](https://wiki.segger.com/Silicon_Labs_EFR32xG23)
 
-# Contacts - Eric Ryherd - drzwave@silabs.com - Author
+# Contacts - Eric Ryherd - Author
+
+- File an Issue to report a problem or make a suggestion.
 
